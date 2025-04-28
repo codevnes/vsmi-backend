@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String         @id @default(uuid()) @db.Uuid
+  email                String         @unique @db.VarChar(100)
+  fullName             String         @db.VarChar(100)
+  phone                String?        @db.VarChar(20)
+  password             String         @db.VarChar(255)
+  role                 Role           @default(USER)
+  thumbnailId          Int?
+  verified             Boolean        @default(false)
+  deletedAt            DateTime?      @db.Timestamptz(3)
+  createdAt            DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @db.Timestamptz(3)
+  posts                Post[]
+  createdSubscriptions Subscription[] @relation("CreatedBy")
+  updatedSubscriptions Subscription[] @relation("UpdatedBy")
+  subscriptions        Subscription[]
+  createdTransactions  Transaction[]  @relation("TransactionCreatedBy")
+  updatedTransactions  Transaction[]  @relation("TransactionUpdatedBy")
+  transactions         Transaction[]
+  thumbnail            Image?         @relation(fields: [thumbnailId], references: [id])
+  watchlists           Watchlist[]
+
+  @@index([email])
+}
+
+model Currency {
+  code      String          @id @db.VarChar(10)
+  name      String          @db.VarChar(255)
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime        @updatedAt @db.Timestamptz(3)
+  prices    CurrencyPrice[]
+}
+
+model Stock {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  symbol                  String                   @unique @db.VarChar(10)
+  name                    String                   @db.VarChar(255)
+  exchange                String?                  @db.VarChar(100)
+  industry                String?                  @db.VarChar(100)
+  description             String?
+  createdAt               DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                 @updatedAt @db.Timestamptz(3)
+  financialMetrics        FinancialMetrics[]
+  posts                   Post[]
+  stockPrices             StockPrice[]
+  subscriptionPlanSymbols SubscriptionPlanSymbol[]
+  transactions            Transaction[]
+  watchlists              Watchlist[]
+
+  @@index([symbol])
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  title       String     @db.VarChar(255)
+  slug        String     @unique @db.VarChar(255)
+  thumbnailId Int?
+  description String?
+  parentId    String?    @db.Uuid
+  deletedAt   DateTime?  @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  thumbnail   Image?     @relation(fields: [thumbnailId], references: [id])
+  posts       Post[]
+
+  @@index([parentId])
+}
+
+model StockPrice {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @db.VarChar(10)
+  date      DateTime @db.Timestamptz(3)
+  open      Decimal  @db.Decimal(10, 4)
+  high      Decimal  @db.Decimal(10, 4)
+  low       Decimal  @db.Decimal(10, 4)
+  close     Decimal  @db.Decimal(10, 4)
+  volume    BigInt?
+  trendQ    Decimal? @db.Decimal(10, 4)
+  fq        Decimal? @db.Decimal(10, 4)
+  bandDown  Decimal? @db.Decimal(10, 4)
+  bandUp    Decimal? @db.Decimal(10, 4)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([symbol])
+}
+
+model CurrencyPrice {
+  id           String   @id @default(uuid()) @db.Uuid
+  currencyCode String   @db.VarChar(10)
+  date         DateTime @db.Timestamptz(3)
+  open         Decimal  @db.Decimal(10, 4)
+  high         Decimal  @db.Decimal(10, 4)
+  low          Decimal  @db.Decimal(10, 4)
+  close        Decimal  @db.Decimal(10, 4)
+  trendQ       Decimal? @db.Decimal(10, 4)
+  fq           Decimal? @db.Decimal(10, 4)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  currency     Currency @relation(fields: [currencyCode], references: [code], onDelete: Cascade)
+
+  @@unique([currencyCode, date])
+  @@index([date])
+}
+
+model FinancialMetrics {
+  id                  String   @id @default(uuid()) @db.Uuid
+  symbol              String   @db.VarChar(10)
+  year                Int
+  quarter             Int?     // Nullable để hỗ trợ dữ liệu năm
+  eps                 Float?
+  epsIndustry         Float?
+  pe                  Float?
+  peIndustry          Float?
+  roa                 Float?
+  roe                 Float?
+  roaIndustry         Float?
+  roeIndustry         Float?
+  revenue             Float?
+  margin              Float?
+  totalDebtToEquity   Float?
+  totalAssetsToEquity Float?
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  stock               Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, year, quarter])
+  @@index([symbol])
+}
+
+model SubscriptionPlan {
+  id            String                   @id @default(uuid()) @db.Uuid
+  name          String                   @db.VarChar(255)
+  description   String?
+  price         Decimal                  @db.Decimal(10, 2)
+  durationDays  Int
+  createdAt     DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                 @updatedAt @db.Timestamptz(3)
+  subscriptions Subscription[]
+  symbols       SubscriptionPlanSymbol[]
+}
+
+model SubscriptionPlanSymbol {
+  id        String           @id @default(uuid()) @db.Uuid
+  planId    String           @db.Uuid
+  symbol    String           @db.VarChar(10)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  stock     Stock            @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([planId, symbol])
+  @@index([planId])
+}
+
+model Subscription {
+  id            String             @id @default(uuid()) @db.Uuid
+  userId        String             @db.Uuid
+  planId        String             @db.Uuid
+  startDate     DateTime           @default(now()) @db.Timestamptz(3)
+  endDate       DateTime           @db.Timestamptz(3)
+  status        SubscriptionStatus @default(ACTIVE)
+  createdBy     String?            @db.Uuid
+  updatedBy     String?            @db.Uuid
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+  createdByUser User?              @relation("CreatedBy", fields: [createdBy], references: [id])
+  plan          SubscriptionPlan   @relation(fields: [planId], references: [id])
+  updatedByUser User?              @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startDate, endDate])
+  @@index([userId])
+}
+
+model Post {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String    @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  description String?
+  content     String?
+  thumbnailId Int?
+  categoryId  String    @db.Uuid
+  symbol      String?   @db.VarChar(10)
+  userId      String    @db.Uuid
+  isPremium   Boolean   @default(false)
+  deletedAt   DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+  category    Category  @relation(fields: [categoryId], references: [id])
+  stock       Stock?    @relation(fields: [symbol], references: [symbol])
+  thumbnail   Image?    @relation(fields: [thumbnailId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([symbol])
+}
+
+model Image {
+  id                Int        @id @default(autoincrement())
+  filename          String     @db.VarChar(191)
+  processedFilename String     @db.VarChar(191)
+  path              String     @db.VarChar(191)
+  url               String     @unique @db.VarChar(191)
+  altText           String?    @db.VarChar(191)
+  mimetype          String?    @db.VarChar(191)
+  size              Int?
+  width             Int?
+  height            Int?
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @db.Timestamptz(3)
+  categories        Category[]
+  posts             Post[]
+  users             User[]
+
+  @@index([url])
+}
+
+model Watchlist {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  symbol    String   @db.VarChar(10)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@index([userId])
+  @@index([symbol])
+}
+
+model Transaction {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @db.Uuid
+  symbol          String          @db.VarChar(10)
+  stockName       String?         @db.VarChar(255)
+  type            TransactionType
+  quantity        Int
+  price           Decimal         @db.Decimal(10, 4)
+  transactionDate DateTime        @db.Timestamptz(3)
+  createdBy       String?         @db.Uuid
+  updatedBy       String?         @db.Uuid
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+  createdByUser   User?           @relation("TransactionCreatedBy", fields: [createdBy], references: [id])
+  stock           Stock           @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  updatedByUser   User?           @relation("TransactionUpdatedBy", fields: [updatedBy], references: [id])
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([transactionDate])
+}
+
+model Setting {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100)
+  value       String
+  description String?
+  type        String   @default("text") @db.VarChar(20)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+enum Role {
+  USER
+  AUTHOR
+  ADMIN
+}
+
+enum TransactionType {
+  BUY
+  SELL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}

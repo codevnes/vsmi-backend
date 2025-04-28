@@ -1,0 +1,31 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes';
+import userRoutes from './user.routes';
+import stockRoutes from './stock.routes';
+import stockPriceRoutes from './stockPrice.routes';
+import currencyRoutes from './currency.routes';
+// import transactionRoutes from './transaction.routes';
+// import subscriptionRoutes from './subscription.routes';
+import postRoutes from './post.routes';
+import categoryRoutes from './category.routes';
+// import watchlistRoutes from './watchlist.routes';
+import settingRoutes from './setting.routes';
+import imageRoutes from './image.routes';
+import financialMetricsRoutes from './financialMetrics.routes';
+
+const router = Router();
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/stocks', stockRoutes);
+router.use('/stock-prices', stockPriceRoutes);
+router.use('/currencies', currencyRoutes);
+// router.use('/transactions', transactionRoutes);
+// router.use('/subscriptions', subscriptionRoutes);
+router.use('/posts', postRoutes);
+router.use('/categories', categoryRoutes);
+// router.use('/watchlists', watchlistRoutes);
+router.use('/settings', settingRoutes);
+router.use('/images', imageRoutes);
+router.use('/financial-metrics', financialMetricsRoutes);
+
+export default router;
