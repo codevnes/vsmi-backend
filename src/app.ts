@@ -8,20 +8,12 @@ import fs from 'fs';
 import path from 'path';
 
 const app = express();
-app.use(cors({
-  origin: ['http://localhost:5000', 'http://localhost:3000', 'http://127.0.0.1:5000', 
-           'https://vsmi.vn', 'https://www.vsmi.vn', 
-           'https://admin.vsmi.vn', 'https://www.admin.vsmi.vn',
-           'https://api.vsmi.vn'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+
+// Disable CORS handling in Express as it's now handled by Nginx
+// CORS headers are now set in Nginx configuration
+
 app.use(express.json());
 app.set('trust proxy', 1);
-
-// Add CORS headers for preflight requests
-app.options('*', cors());
 
 app.use(apiRateLimiter);
 
