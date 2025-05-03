@@ -21,18 +21,35 @@ const dataDir = path.join(process.cwd(), 'data', 'jobs');
   }
 });
 
-// Check if we're behind a proxy that sets CORS headers
-const isBehindProxy = process.env.NODE_ENV === 'production' && process.env.BEHIND_PROXY === 'true';
+// Log environment configuration for debugging
+console.log('CORS Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  CORS_MODE: process.env.CORS_MODE || 'not set',
+});
 
-// Only add CORS middleware if not behind a proxy that handles CORS
-if (!isBehindProxy) {
+// CORS handling
+// Set CORS_MODE to one of:
+// - 'disabled' = No CORS headers from Express (for use behind Nginx/proxy that sets CORS)
+// - 'development' = Allow all origins (*)
+// - 'production' = Restrict to specific origin
+const corsMode = process.env.CORS_MODE || 'disabled';
+
+if (corsMode === 'development') {
+  // Development mode - permissive CORS
+  console.log('Setting up permissive CORS for development');
+  app.use(cors());
+} else if (corsMode === 'production') {
+  // Production mode - restrictive CORS
+  console.log('Setting up restrictive CORS for production');
+  const origin = process.env.CORS_ORIGIN || 'https://admin.vsmi.vn';
   app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
 } else {
-  console.log('Running behind proxy - CORS headers should be set by proxy server');
+  // Disabled - no CORS headers from Express
+  console.log('CORS headers disabled in Express (should be handled by proxy)');
 }
 
 app.use(express.json({ limit: '50mb' }));
@@ -42,6 +59,16 @@ app.use(apiRateLimiter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// Add diagnostic route to check CORS settings (remove in production)
+app.get('/api/v1/env-check', (req, res) => {
+  res.json({
+    env: process.env.NODE_ENV,
+    corsMode: process.env.CORS_MODE, 
+    corsOrigin: process.env.CORS_ORIGIN,
+    headers: req.headers,
+  });
+});
 
 app.use('/api/v1', routes);
 
