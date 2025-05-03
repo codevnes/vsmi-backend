@@ -21,13 +21,19 @@ const dataDir = path.join(process.cwd(), 'data', 'jobs');
   }
 });
 
-// Enable CORS - even if handled by Nginx, this ensures API works
-// during development and acts as a fallback
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Check if we're behind a proxy that sets CORS headers
+const isBehindProxy = process.env.NODE_ENV === 'production' && process.env.BEHIND_PROXY === 'true';
+
+// Only add CORS middleware if not behind a proxy that handles CORS
+if (!isBehindProxy) {
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+} else {
+  console.log('Running behind proxy - CORS headers should be set by proxy server');
+}
 
 app.use(express.json({ limit: '50mb' }));
 app.set('trust proxy', 1);
