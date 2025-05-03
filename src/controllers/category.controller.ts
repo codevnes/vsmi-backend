@@ -36,7 +36,6 @@ const updateCategoryValidation = [
  * @route GET /api/v1/categories
  */
 export const getCategories = [
-  authenticate,
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -81,7 +80,6 @@ export const getCategories = [
  * @route GET /api/v1/categories/tree
  */
 export const getCategoryTree = [
-  authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await categoryService.getCategoryTree();
@@ -97,7 +95,6 @@ export const getCategoryTree = [
  * @route GET /api/v1/categories/:id
  */
 export const getCategoryById = [
-  authenticate,
   validate([
     param('id').isUUID().withMessage('Category ID must be a valid UUID'),
     query('includeDeleted').optional().isBoolean().withMessage('Include deleted must be a boolean'),
@@ -120,7 +117,6 @@ export const getCategoryById = [
  * @route GET /api/v1/categories/slug/:slug
  */
 export const getCategoryBySlug = [
-  authenticate,
   validate([
     param('slug').isString().withMessage('Slug must be a string'),
     query('includeDeleted').optional().isBoolean().withMessage('Include deleted must be a boolean'),

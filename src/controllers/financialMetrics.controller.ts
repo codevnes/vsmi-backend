@@ -433,7 +433,6 @@ export const getFinancialMetricsJobStatus = [
  * @route GET /api/v1/financial-metrics/stock/:symbol/reports
  */
 export const getFinancialMetricsReports = [
-  authenticate,
   validate([
     param('symbol').isString().notEmpty().withMessage('Stock symbol is required'),
     query('type').isString().isIn(['year', 'quarter']).withMessage('Type must be either "year" or "quarter"'),

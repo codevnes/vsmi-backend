@@ -182,7 +182,123 @@ Lấy giá tiền tệ theo mã tiền tệ và khoảng thời gian.
 - `404`: Không tìm thấy tiền tệ với mã được cung cấp
 - `500`: Lỗi server
 
-### 4. Lấy giá tiền tệ theo ID
+### 4. Lấy tất cả giá tiền tệ theo mã không giới hạn
+
+Lấy toàn bộ dữ liệu giá của một tiền tệ cụ thể không giới hạn số lượng.
+
+**Endpoint**: `GET /api/v1/currencies/:currencyCode/prices/all`
+
+**URL Parameters**:
+
+| Tham số      | Kiểu dữ liệu | Bắt buộc | Mô tả           |
+|--------------|--------------|----------|----------------|
+| currencyCode | string       | Có       | Mã tiền tệ     |
+
+**Phản hồi thành công**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "currencyCode": "USD",
+      "date": "2023-06-15T07:00:00.000Z",
+      "open": "23500.00",
+      "high": "23550.00",
+      "low": "23450.00",
+      "close": "23520.00",
+      "trendQ": "120.50",
+      "fq": "250.75",
+      "createdAt": "2023-06-15T08:00:00.000Z",
+      "updatedAt": "2023-06-15T08:00:00.000Z"
+    },
+    {
+      "id": "223e4567-e89b-12d3-a456-426614174001",
+      "currencyCode": "USD",
+      "date": "2023-06-16T07:00:00.000Z",
+      "open": "23520.00",
+      "high": "23600.00",
+      "low": "23480.00",
+      "close": "23550.00",
+      "trendQ": "125.75",
+      "fq": "260.30",
+      "createdAt": "2023-06-16T08:00:00.000Z",
+      "updatedAt": "2023-06-16T08:00:00.000Z"
+    }
+    // Tất cả các bản ghi giá của tiền tệ được trả về không giới hạn số lượng
+  ],
+  "total": 1000,
+  "message": "All currency prices retrieved successfully"
+}
+```
+
+**Mã lỗi**:
+- `404`: Không tìm thấy tiền tệ với mã được cung cấp
+- `500`: Lỗi server
+
+### 5. Lấy tất cả giá tiền tệ theo mã không giới hạn (cho cặp tiền tệ)
+
+Lấy toàn bộ dữ liệu giá của một tiền tệ cụ thể không giới hạn số lượng, phù hợp cho các cặp tiền tệ có chứa dấu gạch chéo như "AUD/USD".
+
+**Endpoint**: `GET /api/v1/currencies/prices/all`
+
+**Query Parameters**:
+
+| Tham số | Kiểu dữ liệu | Bắt buộc | Mô tả           |
+|---------|--------------|----------|----------------|
+| code    | string       | Có       | Mã tiền tệ     |
+
+**Ví dụ**:
+```
+GET /api/v1/currencies/prices/all?code=AUD/USD
+```
+
+**Phản hồi thành công**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "currencyCode": "AUD/USD",
+      "date": "2023-06-15T07:00:00.000Z",
+      "open": "0.6850",
+      "high": "0.6870",
+      "low": "0.6830",
+      "close": "0.6860",
+      "trendQ": "0.35",
+      "fq": "0.75",
+      "createdAt": "2023-06-15T08:00:00.000Z",
+      "updatedAt": "2023-06-15T08:00:00.000Z"
+    },
+    {
+      "id": "223e4567-e89b-12d3-a456-426614174001",
+      "currencyCode": "AUD/USD",
+      "date": "2023-06-16T07:00:00.000Z",
+      "open": "0.6860",
+      "high": "0.6880",
+      "low": "0.6840",
+      "close": "0.6870",
+      "trendQ": "0.38",
+      "fq": "0.78",
+      "createdAt": "2023-06-16T08:00:00.000Z",
+      "updatedAt": "2023-06-16T08:00:00.000Z"
+    }
+    // Tất cả các bản ghi giá của tiền tệ được trả về không giới hạn số lượng
+  ],
+  "total": 1000,
+  "message": "All currency prices retrieved successfully"
+}
+```
+
+**Mã lỗi**:
+- `400`: Thiếu tham số code
+- `404`: Không tìm thấy tiền tệ với mã được cung cấp
+- `500`: Lỗi server
+
+### 6. Lấy giá tiền tệ theo ID
 
 Lấy thông tin chi tiết của một giá tiền tệ dựa trên ID.
 
@@ -220,7 +336,7 @@ Lấy thông tin chi tiết của một giá tiền tệ dựa trên ID.
 - `404`: Không tìm thấy giá tiền tệ với ID được cung cấp
 - `500`: Lỗi server
 
-### 5. Tạo mới giá tiền tệ
+### 7. Tạo mới giá tiền tệ
 
 Tạo mới một giá tiền tệ trong hệ thống.
 
@@ -265,7 +381,7 @@ Tạo mới một giá tiền tệ trong hệ thống.
 - `404`: Không tìm thấy tiền tệ với mã được cung cấp
 - `500`: Lỗi server
 
-### 6. Tạo nhiều giá tiền tệ cùng lúc
+### 8. Tạo nhiều giá tiền tệ cùng lúc
 
 Tạo nhiều bản ghi giá tiền tệ cùng một lúc.
 
@@ -291,7 +407,7 @@ Mảng các đối tượng giá tiền tệ, mỗi đối tượng có cấu tr
 - `404`: Không tìm thấy tiền tệ với mã được cung cấp
 - `500`: Lỗi server
 
-### 7. Nhập giá tiền tệ từ tệp
+### 9. Nhập giá tiền tệ từ tệp
 
 Nhập dữ liệu giá tiền tệ từ tệp CSV hoặc Excel.
 
@@ -344,7 +460,7 @@ Tệp phải có các cột sau:
 
 Chi tiết thêm về API này, vui lòng xem tại [Tài liệu API Nhập Dữ Liệu Tiền Tệ](api/currency-import-vi.md).
 
-### 8. Nhập giá tiền tệ từ JSON
+### 10. Nhập giá tiền tệ từ JSON
 
 Nhập dữ liệu giá tiền tệ từ dữ liệu JSON.
 
@@ -407,7 +523,7 @@ Authorization: Bearer {token}
 
 Chi tiết thêm về API này, vui lòng xem tại [Tài liệu API Nhập Dữ Liệu Tiền Tệ](api/currency-import-vi.md).
 
-### 9. Cập nhật giá tiền tệ
+### 11. Cập nhật giá tiền tệ
 
 Cập nhật thông tin của một giá tiền tệ dựa trên ID.
 
@@ -456,7 +572,7 @@ Cập nhật thông tin của một giá tiền tệ dựa trên ID.
 - `404`: Không tìm thấy giá tiền tệ với ID được cung cấp
 - `500`: Lỗi server
 
-### 10. Xóa giá tiền tệ
+### 12. Xóa giá tiền tệ
 
 Xóa một giá tiền tệ dựa trên ID.
 

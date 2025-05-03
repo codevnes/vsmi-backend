@@ -51,7 +51,7 @@ export interface StockPricesResult {
   stockPrices: StockPriceData[];
   total: number;
   page: number;
-  limit: number;
+  limit: number | null;
   totalPages: number;
 }
 
@@ -61,12 +61,10 @@ export const getStockPrices = async (params: GetStockPricesParams): Promise<Stoc
     startDate,
     endDate,
     page = 1,
-    limit = 100,
+    limit,
     sortDirection = 'desc'
   } = params;
 
-  const skip = (page - 1) * limit;
-  
   // Build where condition
   const where: Prisma.StockPriceWhereInput = { symbol };
   
@@ -85,11 +83,14 @@ export const getStockPrices = async (params: GetStockPricesParams): Promise<Stoc
   // Get total count
   const total = await prisma.stockPrice.count({ where });
 
-  // Get stock prices
+  // Handle pagination
+  const skip = limit ? (page - 1) * limit : 0;
+  
+  // Get stock prices with or without pagination
   const stockPricesData = await prisma.stockPrice.findMany({
     where,
     skip,
-    take: limit,
+    ...(limit ? { take: limit } : {}), // Only apply limit if it's provided
     orderBy: { date: sortDirection },
   });
 
@@ -100,8 +101,8 @@ export const getStockPrices = async (params: GetStockPricesParams): Promise<Stoc
     stockPrices,
     total,
     page,
-    limit,
-    totalPages: Math.ceil(total / limit)
+    limit: limit || null,
+    totalPages: limit ? Math.ceil(total / limit) : 1
   };
 };
 
@@ -119,14 +120,12 @@ export interface GetAllStockPricesParams {
 export const getAllStockPrices = async (params: GetAllStockPricesParams): Promise<StockPricesResult> => {
   const {
     page = 1,
-    limit = 100,
+    limit,
     startDate,
     endDate,
     symbol
   } = params;
 
-  const skip = (page - 1) * limit;
-  
   // Build where condition
   const where: Prisma.StockPriceWhereInput = {};
   
@@ -149,11 +148,14 @@ export const getAllStockPrices = async (params: GetAllStockPricesParams): Promis
   // Get total count
   const total = await prisma.stockPrice.count({ where });
 
-  // Get stock prices
+  // Handle pagination
+  const skip = limit ? (page - 1) * limit : 0;
+  
+  // Get stock prices with or without pagination
   const stockPricesData = await prisma.stockPrice.findMany({
     where,
     skip,
-    take: limit,
+    ...(limit ? { take: limit } : {}), // Only apply limit if it's provided
     orderBy: { date: 'desc' },
   });
 
@@ -164,8 +166,8 @@ export const getAllStockPrices = async (params: GetAllStockPricesParams): Promis
     stockPrices,
     total,
     page,
-    limit,
-    totalPages: Math.ceil(total / limit)
+    limit: limit || null,
+    totalPages: limit ? Math.ceil(total / limit) : 1
   };
 };
 

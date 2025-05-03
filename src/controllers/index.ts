@@ -11,3 +11,5 @@ export * from './category.controller';
 export * from './setting.controller';
 export * from './image.controller';
 export * from './financialMetrics.controller';
+export * from './stockProfile.controller';
+export * from './selectedStocks.controller';

@@ -112,7 +112,6 @@ const handleFileUpload = upload.single('file');
  * @route GET /api/v1/stock-prices/symbol/:symbol
  */
 export const getStockPrices = [
-  authenticate,
   validate([
     param('symbol').isString().notEmpty().withMessage('Symbol is required'),
     query('startDate').optional().isISO8601().toDate().withMessage('Start date must be a valid ISO date'),
@@ -126,12 +125,20 @@ export const getStockPrices = [
       const symbol = req.params.symbol;
       const { startDate, endDate, page, limit, sortDirection } = req.query;
       
+      // Process limit parameter
+      // If limit is an empty string or not provided, set it to undefined
+      // Otherwise convert it to a number
+      let parsedLimit: number | undefined = undefined;
+      if (limit !== undefined && limit !== '') {
+        parsedLimit = parseInt(limit as string, 10);
+      }
+      
       const params = {
         symbol,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
         page: page ? parseInt(page as string, 10) : undefined,
-        limit: limit ? parseInt(limit as string, 10) : undefined,
+        limit: parsedLimit,
         sortDirection: sortDirection as 'asc' | 'desc' | undefined,
       };
       
@@ -457,7 +464,7 @@ export const uploadStockPricesCsv = [
 ];
 
 /**
- * Get all stock prices with pagination, date filtering, and optional symbol filtering
+ * Get all stock prices with pagination and filtering
  * @route GET /api/v1/stock-prices
  */
 export const getAllStockPrices = [
@@ -465,22 +472,28 @@ export const getAllStockPrices = [
   validate([
     query('startDate').optional().isISO8601().toDate().withMessage('Start date must be a valid ISO date'),
     query('endDate').optional().isISO8601().toDate().withMessage('End date must be a valid ISO date'),
+    query('symbol').optional().isString().withMessage('Symbol must be a string'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('sortDirection').optional().isIn(['asc', 'desc']).withMessage('Sort direction must be either asc or desc'),
-    query('symbol').optional().isString().withMessage('Symbol must be a string'),
   ]),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { startDate, endDate, page, limit, sortDirection, symbol } = req.query;
+      const { startDate, endDate, symbol, page, limit } = req.query;
+      
+      // Process limit parameter
+      // If limit is an empty string or not provided, set it to undefined
+      // Otherwise convert it to a number
+      let parsedLimit: number | undefined = undefined;
+      if (limit !== undefined && limit !== '') {
+        parsedLimit = parseInt(limit as string, 10);
+      }
       
       const params = {
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
-        page: page ? parseInt(page as string, 10) : undefined,
-        limit: limit ? parseInt(limit as string, 10) : undefined,
-        sortDirection: sortDirection as 'asc' | 'desc' | undefined,
         symbol: symbol as string | undefined,
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: parsedLimit,
       };
       
       const result = await stockPriceService.getAllStockPrices(params);

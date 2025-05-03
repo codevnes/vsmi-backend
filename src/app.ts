@@ -8,7 +8,11 @@ import fs from 'fs';
 import path from 'path';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5000','http://localhost:3000', 'http://127.0.0.1:5000','https://vsmi.vn','https://www.vsmi.vn','https://admin.vsmi.vn','https://www.admin.vsmi.vn'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  credentials: true
+}));
 app.use(express.json());
 app.set('trust proxy', 1);
 

@@ -103,7 +103,6 @@ export const getStockById = [
  * @route GET /api/v1/stocks/symbol/:symbol
  */
 export const getStockBySymbol = [
-  authenticate,
   validate([
     param('symbol').isString().withMessage('Symbol must be a string'),
   ]),

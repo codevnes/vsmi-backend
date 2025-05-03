@@ -8,6 +8,7 @@ export * from './stock.service';
 export * from './stockPrice.service';
 export * from './financialMetrics.service';
 export * from './currency.service';
+export * from './stockProfile.service';
 
 // These services are not yet implemented
 // export * from './subscription.service';

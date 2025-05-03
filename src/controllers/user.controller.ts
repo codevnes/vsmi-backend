@@ -24,6 +24,37 @@ export const changePasswordValidationRules = [
   body('confirmPassword').notEmpty().withMessage('Password confirmation is required'),
 ];
 
+// Validation rules for change role
+export const changeRoleValidationRules = [
+  body('role').isIn(['USER', 'AUTHOR', 'ADMIN']).withMessage('Invalid role'),
+];
+
+// Validation rules for update status
+export const updateStatusValidationRules = [
+  body('active').isBoolean().withMessage('Active must be a boolean value'),
+];
+
+// Validation rules for admin reset password
+export const resetPasswordValidationRules = [
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters')
+    .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$/)
+    .withMessage('Password must contain at least one number, one lowercase and one uppercase letter'),
+];
+
+// Validation rules for bulk status update
+export const bulkStatusUpdateValidationRules = [
+  body('userIds').isArray().withMessage('User IDs must be an array'),
+  body('userIds.*').isString().withMessage('Each user ID must be a string'),
+  body('active').isBoolean().withMessage('Active must be a boolean value'),
+];
+
+// Validation rules for verification
+export const verifyUserValidationRules = [
+  body('verified').isBoolean().withMessage('Verified must be a boolean value'),
+];
+
 /**
  * Get user profile
  */
@@ -138,6 +169,154 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 
     const user = await userService.getUserById(userId);
     successResponse(res, user, 'User retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user role (admin only)
+ */
+export const updateUserRole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new BadRequestError('Validation error');
+    }
+
+    const userId = req.params.id;
+    
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    const { role } = req.body;
+    const updatedUser = await userService.updateUserRole(userId, role);
+    
+    successResponse(res, updatedUser, 'User role updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user status (active/inactive) (admin only)
+ */
+export const updateUserStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new BadRequestError('Validation error');
+    }
+
+    const userId = req.params.id;
+    
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    const { active } = req.body;
+    const updatedUser = await userService.updateUserStatus(userId, active);
+    
+    successResponse(res, updatedUser, `User ${active ? 'activated' : 'deactivated'} successfully`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete user (admin only)
+ */
+export const deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    await userService.deleteUser(userId);
+    
+    successResponse(res, null, 'User deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reset user password (admin only)
+ */
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new BadRequestError('Validation error');
+    }
+
+    const userId = req.params.id;
+    
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    const { password } = req.body;
+    await userService.resetPassword(userId, password);
+    
+    successResponse(res, null, 'Password reset successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk update user status (admin only)
+ */
+export const bulkUpdateUserStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new BadRequestError('Validation error');
+    }
+
+    const { userIds, active } = req.body;
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      throw new BadRequestError('At least one user ID is required');
+    }
+
+    const result = await userService.bulkUpdateUserStatus(userIds, active);
+    
+    successResponse(res, result, `${result.successCount} users ${active ? 'activated' : 'deactivated'} successfully`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Verify user (admin only)
+ */
+export const verifyUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new BadRequestError('Validation error');
+    }
+
+    const userId = req.params.id;
+    
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    const { verified } = req.body;
+    const updatedUser = await userService.verifyUser(userId, verified);
+    
+    successResponse(res, updatedUser, `User ${verified ? 'verified' : 'unverified'} successfully`);
   } catch (error) {
     next(error);
   }

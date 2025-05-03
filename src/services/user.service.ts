@@ -2,6 +2,7 @@ import { prisma } from '../config';
 import { hashPassword, verifyPassword } from '../utils/crypto';
 import { BadRequestError, NotFoundError } from '../utils/error';
 import { ChangePasswordInput, UpdateProfileInput, UserData, UserListParams, UserProfile } from '../types/user.types';
+import { Role } from '../types/auth.types';
 
 /**
  * Get user by ID
@@ -220,4 +221,230 @@ export const listUsers = async (params: UserListParams = {}): Promise<{
     limit,
     pages: Math.ceil(total / limit),
   };
+};
+
+/**
+ * Update user role (admin only)
+ * @param userId User ID
+ * @param role New role
+ * @returns Updated user data
+ */
+export const updateUserRole = async (
+  userId: string,
+  role: Role
+): Promise<UserData> => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Update user role
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { role },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      phone: true,
+      role: true,
+      verified: true,
+      thumbnailId: true,
+      createdAt: true,
+      updatedAt: true,
+      password: false,
+    },
+  });
+
+  return updatedUser as UserData;
+};
+
+/**
+ * Update user status (active/inactive)
+ * @param userId User ID
+ * @param active New active status
+ * @returns Updated user data
+ */
+export const updateUserStatus = async (
+  userId: string,
+  active: boolean
+): Promise<UserData> => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Update user status
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { 
+      // If active is true, set verified to true and deletedAt to null
+      // If active is false, set verified to false (keep deletedAt as is)
+      verified: active,
+      deletedAt: active ? null : user.deletedAt,
+    },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      phone: true,
+      role: true,
+      verified: true,
+      thumbnailId: true,
+      createdAt: true,
+      updatedAt: true,
+      password: false,
+    },
+  });
+
+  return updatedUser as UserData;
+};
+
+/**
+ * Soft delete a user
+ * @param userId User ID
+ */
+export const deleteUser = async (userId: string): Promise<void> => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Soft delete by setting deletedAt timestamp
+  await prisma.user.update({
+    where: { id: userId },
+    data: { 
+      deletedAt: new Date(),
+      verified: false,
+    },
+  });
+};
+
+/**
+ * Reset user password (admin only)
+ * @param userId User ID
+ * @param password New password
+ */
+export const resetPassword = async (
+  userId: string,
+  password: string
+): Promise<void> => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Hash new password
+  const hashedPassword = await hashPassword(password);
+
+  // Update password
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+  });
+};
+
+/**
+ * Bulk update user status (admin only)
+ * @param userIds Array of user IDs
+ * @param active New active status
+ * @returns Result of the bulk operation
+ */
+export const bulkUpdateUserStatus = async (
+  userIds: string[],
+  active: boolean
+): Promise<{ successCount: number; failedCount: number; failedIds: string[] }> => {
+  const results = {
+    successCount: 0,
+    failedCount: 0,
+    failedIds: [] as string[],
+  };
+
+  // Process each user ID
+  for (const userId of userIds) {
+    try {
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        results.failedCount++;
+        results.failedIds.push(userId);
+        continue;
+      }
+
+      // Update user status
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          verified: active,
+          deletedAt: active ? null : user.deletedAt,
+        },
+      });
+
+      results.successCount++;
+    } catch (error) {
+      results.failedCount++;
+      results.failedIds.push(userId);
+    }
+  }
+
+  return results;
+};
+
+/**
+ * Verify user (admin only)
+ * @param userId User ID
+ * @param verified New verification status
+ * @returns Updated user data
+ */
+export const verifyUser = async (
+  userId: string,
+  verified: boolean
+): Promise<UserData> => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Update user verification status
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { verified },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      phone: true,
+      role: true,
+      verified: true,
+      thumbnailId: true,
+      createdAt: true,
+      updatedAt: true,
+      password: false,
+    },
+  });
+
+  return updatedUser as UserData;
 };

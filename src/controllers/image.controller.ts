@@ -76,12 +76,25 @@ export const uploadMultipleImagesHandler = [
   multerUploadMultiple,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      // The req.files will now be an object with field names as keys and arrays of files as values
+      if (!req.files || Object.keys(req.files).length === 0) {
         throw new BadRequestError('No image files provided');
       }
 
+      // Collect all files from different fields into a single array
+      const allFiles: Express.Multer.File[] = [];
+      Object.values(req.files).forEach((filesArray: Express.Multer.File[]) => {
+        if (Array.isArray(filesArray)) {
+          allFiles.push(...filesArray);
+        }
+      });
+
+      if (allFiles.length === 0) {
+        throw new BadRequestError('No valid image files found');
+      }
+
       const options = parseImageOptions(req);
-      const result = await imageService.processMultipleImages(req.files, options);
+      const result = await imageService.processMultipleImages(allFiles, options);
       
       const message = result.failed.length > 0 
         ? `Uploaded ${result.successful.length} images successfully with ${result.failed.length} failures`

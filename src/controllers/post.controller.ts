@@ -43,7 +43,6 @@ const updatePostValidation = [
  * @route GET /api/v1/posts
  */
 export const getPosts = [
-  authenticate,
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -52,7 +51,7 @@ export const getPosts = [
     query('authorId').optional().isUUID().withMessage('Author ID must be a valid UUID'),
     query('published').optional().isBoolean().withMessage('Published must be a boolean'),
     query('includeDeleted').optional().isBoolean().withMessage('Include deleted must be a boolean'),
-    query('sortBy').optional().isIn(['title', 'createdAt', 'publishedAt']).withMessage('Sort by must be one of: title, createdAt, publishedAt'),
+    query('sortBy').optional().isIn(['title', 'createdAt']).withMessage('Sort by must be one of: title, createdAt'),
     query('sortDirection').optional().isIn(['asc', 'desc']).withMessage('Sort direction must be either asc or desc'),
   ]),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -77,7 +76,7 @@ export const getPosts = [
         authorId: authorId as string,
         published: published === 'true',
         includeDeleted: includeDeleted === 'true',
-        sortBy: sortBy as 'title' | 'createdAt' | 'publishedAt',
+        sortBy: sortBy as 'title' | 'createdAt',
         sortDirection: sortDirection as 'asc' | 'desc',
       };
       
@@ -94,7 +93,6 @@ export const getPosts = [
  * @route GET /api/v1/posts/:id
  */
 export const getPostById = [
-  authenticate,
   validate([
     param('id').isUUID().withMessage('Post ID must be a valid UUID'),
     query('includeDeleted').optional().isBoolean().withMessage('Include deleted must be a boolean'),
@@ -117,7 +115,6 @@ export const getPostById = [
  * @route GET /api/v1/posts/slug/:slug
  */
 export const getPostBySlug = [
-  authenticate,
   validate([
     param('slug').isString().withMessage('Slug must be a string'),
     query('includeDeleted').optional().isBoolean().withMessage('Include deleted must be a boolean'),

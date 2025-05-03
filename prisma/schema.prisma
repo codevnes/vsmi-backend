@@ -55,6 +55,8 @@ model Stock {
   subscriptionPlanSymbols SubscriptionPlanSymbol[]
   transactions            Transaction[]
   watchlists              Watchlist[]
+  profile                 StockProfile?
+  selectedStocks          SelectedStocks[]
 
   @@index([symbol])
 }
@@ -276,6 +278,40 @@ model Setting {
   version     Int      @default(1)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model StockProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @unique @db.VarChar(10)
+  price     Float?   // Giá cổ phiếu (VD: giá đóng cửa gần nhất)
+  profit    Float?   // Lợi nhuận ròng (VD: lợi nhuận mới nhất)
+  volume    Float?   // Khối lượng giao dịch (VD: khối lượng trung bình hoặc mới nhất)
+  pe        Float?   // Tỷ lệ P/E
+  eps       Float?   // Thu nhập trên mỗi cổ phiếu
+  roa       Float?   // Tỷ suất lợi nhuận trên tài sản
+  roe       Float?   // Tỷ suất lợi nhuận trên vốn chủ sở hữu
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([symbol])
+}
+
+model SelectedStocks {
+  id        String   @id @default(uuid()) @db.Uuid
+  symbol    String   @db.VarChar(10)
+  date      DateTime @db.Date // Ngày giao dịch (VD: 2025-04-28)
+  close     Float?   // Giá đóng cửa (VD: 13300 VND)
+  return    Float?   // Tỷ suất lợi nhuận (VD: 0.06604 = 6.604%)
+  qIndex    Float?   // Chỉ số chất lượng (VD: 1.70884)
+  volume    Float?   // Khối lượng giao dịch (VD: 28110600)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  stock     Stock?   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([symbol])
+  @@index([date])
 }
 
 enum Role {

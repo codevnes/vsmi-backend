@@ -60,7 +60,7 @@ export interface PostListParams {
   authorId?: string;
   published?: boolean;
   includeDeleted?: boolean;
-  sortBy?: 'title' | 'createdAt' | 'publishedAt';
+  sortBy?: 'title' | 'createdAt';
   sortDirection?: 'asc' | 'desc';
 }
 

@@ -746,3 +746,84 @@ export const importCurrencyPricesFromJson = async (req: Request, res: Response):
     });
   }
 };
+
+/**
+ * Get all prices for a specific currency code without limit
+ */
+export const getAllCurrencyPricesByCode = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { currencyCode } = req.params;
+    
+    // Check if currency exists
+    const currency = await currencyService.getCurrencyByCode(currencyCode);
+    if (!currency) {
+      res.status(404).json({
+        success: false,
+        message: `Currency with code ${currencyCode} not found`,
+      });
+      return;
+    }
+    
+    const { currencyPrices, total } = await currencyService.getAllCurrencyPricesByCode(currencyCode);
+    
+    res.status(200).json({
+      success: true,
+      data: currencyPrices,
+      total,
+      message: 'All currency prices retrieved successfully',
+    });
+  } catch (error) {
+    console.error('Error retrieving all currency prices:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve currency prices',
+      error: (error as Error).message,
+    });
+  }
+};
+
+/**
+ * Get all prices for a specific currency code without limit using query parameter
+ * This handles currency codes with slashes like "AUD/USD"
+ */
+export const getAllCurrencyPricesByCodeQuery = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      res.status(400).json({
+        success: false,
+        message: 'Currency code is required as a query parameter',
+      });
+      return;
+    }
+    
+    const currencyCode = code as string;
+    
+    // Check if currency exists
+    const currency = await currencyService.getCurrencyByCode(currencyCode);
+    if (!currency) {
+      res.status(404).json({
+        success: false,
+        message: `Currency with code ${currencyCode} not found`,
+      });
+      return;
+    }
+    
+    const { currencyPrices, total } = await currencyService.getAllCurrencyPricesByCode(currencyCode);
+    
+    res.status(200).json({
+      success: true,
+      data: currencyPrices,
+      total,
+      message: 'All currency prices retrieved successfully',
+    });
+  } catch (error) {
+    console.error('Error retrieving all currency prices:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve currency prices',
+      error: (error as Error).message,
+    });
+  }
+};

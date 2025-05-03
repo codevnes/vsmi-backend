@@ -773,3 +773,24 @@ export const importCurrencyPrices = async (
     skipDuplicates: true,
   });
 };
+
+/**
+ * Get all currency prices for a specific currency code with no pagination limit
+ */
+export const getAllCurrencyPricesByCode = async (
+  currencyCode: string
+): Promise<{ currencyPrices: CurrencyPrice[]; total: number }> => {
+  const where = {
+    currencyCode
+  };
+
+  const [currencyPrices, total] = await Promise.all([
+    prisma.currencyPrice.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    }),
+    prisma.currencyPrice.count({ where }),
+  ]);
+
+  return { currencyPrices, total };
+};

@@ -12,6 +12,8 @@ import categoryRoutes from './category.routes';
 import settingRoutes from './setting.routes';
 import imageRoutes from './image.routes';
 import financialMetricsRoutes from './financialMetrics.routes';
+import stockProfileRoutes from './stockProfile.routes';
+import selectedStocksRoutes from './selectedStocks.routes';
 
 const router = Router();
 router.use('/auth', authRoutes);
@@ -27,5 +29,7 @@ router.use('/categories', categoryRoutes);
 router.use('/settings', settingRoutes);
 router.use('/images', imageRoutes);
 router.use('/financial-metrics', financialMetricsRoutes);
+router.use('/stock-profiles', stockProfileRoutes);
+router.use('/selected-stocks', selectedStocksRoutes);
 
 export default router;

@@ -54,6 +54,13 @@ router.post('/prices/import', currencyController.upload.single('file'), currency
 router.post('/prices/import/json', currencyController.importCurrencyPricesFromJson);
 
 /**
+ * @route GET /api/v1/currencies/prices/all
+ * @desc Get all currency prices for a specific currency code using query param (handles currency pairs with slash)
+ * @access Private
+ */
+router.get('/prices/all', currencyController.getAllCurrencyPricesByCodeQuery);
+
+/**
  * @route GET /api/v1/currencies/prices/latest
  * @desc Get latest currency prices
  * @access Private
@@ -122,6 +129,13 @@ router.delete('/:code', currencyController.deleteCurrency);
  * @access Private (ADMIN only)
  */
 router.post('/', currencyController.createCurrency);
+
+/**
+ * @route GET /api/v1/currencies/:currencyCode/prices/all
+ * @desc Get all currency prices for a specific currency code without limit
+ * @access Private
+ */
+router.get('/:currencyCode/prices/all', currencyController.getAllCurrencyPricesByCode);
 
 /**
  * @route GET /api/v1/currencies/:currencyCode/prices

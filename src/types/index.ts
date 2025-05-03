@@ -8,3 +8,15 @@ export * from './image.types';
 export * from './category.types';
 export * from './post.types';
 export * from './currency.types';
+
+export interface SelectedStocksData {
+  id: string;
+  symbol: string;
+  date: Date;
+  close?: number;
+  return?: number;
+  qIndex?: number;
+  volume?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
