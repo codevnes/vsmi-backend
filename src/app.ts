@@ -9,10 +9,27 @@ import path from 'path';
 
 const app = express();
 
-// Disable CORS handling in Express as it's now handled by Nginx
-// CORS headers are now set in Nginx configuration
+// Create necessary directories
+const uploadsDir = path.join(process.cwd(), 'uploads');
+const tempDir = path.join(uploadsDir, 'temp');
+const dataDir = path.join(process.cwd(), 'data', 'jobs');
 
-app.use(express.json());
+// Ensure directories exist
+[uploadsDir, tempDir, dataDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Enable CORS - even if handled by Nginx, this ensures API works
+// during development and acts as a fallback
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json({ limit: '50mb' }));
 app.set('trust proxy', 1);
 
 app.use(apiRateLimiter);

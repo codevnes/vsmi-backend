@@ -302,7 +302,15 @@ export const getJobStatus = [
       const jobStatus = stockPriceService.getStockPriceJobStatus(jobId);
       
       if (!jobStatus) {
-        throw new NotFoundError(`Job with ID ${jobId} not found`);
+        // Return a default status instead of throwing an error
+        // This handles cases where server has restarted and lost job data
+        return successResponse(res, {
+          status: 'unknown',
+          progress: 100,
+          totalRecords: 0,
+          processedRecords: 0,
+          message: 'Job information not available. The server may have restarted since the job was submitted.'
+        }, `Job status information unavailable`);
       }
       
       return successResponse(res, jobStatus, `Job status retrieved successfully`);

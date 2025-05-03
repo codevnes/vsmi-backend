@@ -1,8 +1,16 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/error';
 import { StockPriceData } from '../types';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
+
+// Create a jobs directory if it doesn't exist
+const jobsDir = path.join(process.cwd(), 'data', 'jobs');
+if (!fs.existsSync(jobsDir)) {
+  fs.mkdirSync(jobsDir, { recursive: true });
+}
 
 // Convert Prisma StockPrice to StockPriceData
 function convertToStockPrice(stockPrice: any): StockPriceData {
@@ -357,7 +365,7 @@ export const bulkUpsertStockPrices = async (
 
 // Job tracking for large uploads
 interface JobStatus {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'unknown';
   progress: number;
   totalRecords: number;
   processedRecords: number;
@@ -365,9 +373,34 @@ interface JobStatus {
   error?: string;
   symbol?: string;
   fileName?: string;
+  createdAt?: number;
 }
 
 const jobs = new Map<string, JobStatus>();
+
+// Helper function to save job status to file
+const saveJobToFile = (jobId: string, status: JobStatus): void => {
+  try {
+    const filePath = path.join(jobsDir, `${jobId}.json`);
+    fs.writeFileSync(filePath, JSON.stringify({ ...status, updatedAt: Date.now() }));
+  } catch (error) {
+    console.error(`Error saving job status to file for job ${jobId}:`, error);
+  }
+};
+
+// Helper function to load job status from file
+const loadJobFromFile = (jobId: string): JobStatus | null => {
+  try {
+    const filePath = path.join(jobsDir, `${jobId}.json`);
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(data) as JobStatus;
+    }
+  } catch (error) {
+    console.error(`Error loading job status from file for job ${jobId}:`, error);
+  }
+  return null;
+};
 
 /**
  * Create a bulk upsert job for large datasets
@@ -377,20 +410,26 @@ export const createBulkUpsertJob = async (
 ): Promise<{ jobId: string; totalRecords: number }> => {
   const jobId = Date.now().toString();
   
-  jobs.set(jobId, {
+  const jobStatus: JobStatus = {
     status: 'pending',
     progress: 0,
     totalRecords: stockPrices.length,
-    processedRecords: 0
-  });
+    processedRecords: 0,
+    createdAt: Date.now()
+  };
+  
+  jobs.set(jobId, jobStatus);
+  saveJobToFile(jobId, jobStatus);
 
   // Process job asynchronously
   setImmediate(async () => {
     try {
-      jobs.set(jobId, {
+      const updatedStatus = {
         ...jobs.get(jobId)!,
-        status: 'processing'
-      });
+        status: 'processing' as const
+      };
+      jobs.set(jobId, updatedStatus);
+      saveJobToFile(jobId, updatedStatus);
 
       const BATCH_SIZE = 1000;
       let processedCount = 0;
@@ -401,26 +440,32 @@ export const createBulkUpsertJob = async (
         
         processedCount += batch.length;
         
-        jobs.set(jobId, {
+        const progressStatus = {
           ...jobs.get(jobId)!,
           progress: Math.round((processedCount / stockPrices.length) * 100),
           processedRecords: processedCount
-        });
+        };
+        jobs.set(jobId, progressStatus);
+        saveJobToFile(jobId, progressStatus);
       }
 
-      jobs.set(jobId, {
+      const completedStatus = {
         ...jobs.get(jobId)!,
-        status: 'completed',
+        status: 'completed' as const,
         progress: 100,
         processedRecords: stockPrices.length,
         message: `Processed ${stockPrices.length} records successfully`
-      });
+      };
+      jobs.set(jobId, completedStatus);
+      saveJobToFile(jobId, completedStatus);
     } catch (error) {
-      jobs.set(jobId, {
+      const errorStatus = {
         ...jobs.get(jobId)!,
-        status: 'failed',
+        status: 'failed' as const,
         error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      };
+      jobs.set(jobId, errorStatus);
+      saveJobToFile(jobId, errorStatus);
     }
   });
 
@@ -431,8 +476,23 @@ export const createBulkUpsertJob = async (
  * Get the status of a job
  */
 export const getStockPriceJobStatus = (jobId: string): JobStatus | null => {
+  // First check the in-memory Map
   const job = jobs.get(jobId);
-  return job || null;
+  
+  if (job) {
+    return job;
+  }
+  
+  // If not found in memory, try to load from file
+  const fileJob = loadJobFromFile(jobId);
+  
+  // If found in file, add back to in-memory Map
+  if (fileJob) {
+    jobs.set(jobId, fileJob);
+    return fileJob;
+  }
+  
+  return null;
 };
 
 /**
@@ -444,14 +504,18 @@ export const registerFileUploadJob = (
   fileName: string,
   totalRecords: number
 ): void => {
-  jobs.set(jobId, {
+  const jobStatus: JobStatus = {
     status: 'pending',
     progress: 0,
     totalRecords,
     processedRecords: 0,
     symbol,
-    fileName
-  });
+    fileName,
+    createdAt: Date.now()
+  };
+  
+  jobs.set(jobId, jobStatus);
+  saveJobToFile(jobId, jobStatus);
 };
 
 /**
@@ -466,13 +530,31 @@ export const updateFileUploadJobStatus = (
   const job = jobs.get(jobId);
   
   if (job) {
-    jobs.set(jobId, {
+    const updatedJob = {
       ...job,
       status,
       processedRecords: processedRecords !== undefined ? processedRecords : job.processedRecords,
       progress: processedRecords !== undefined ? Math.round((processedRecords / job.totalRecords) * 100) : job.progress,
       error
-    });
+    };
+    
+    jobs.set(jobId, updatedJob);
+    saveJobToFile(jobId, updatedJob);
+  } else {
+    // Try to load from file
+    const fileJob = loadJobFromFile(jobId);
+    if (fileJob) {
+      const updatedJob = {
+        ...fileJob,
+        status,
+        processedRecords: processedRecords !== undefined ? processedRecords : fileJob.processedRecords,
+        progress: processedRecords !== undefined ? Math.round((processedRecords / fileJob.totalRecords) * 100) : fileJob.progress,
+        error
+      };
+      
+      jobs.set(jobId, updatedJob);
+      saveJobToFile(jobId, updatedJob);
+    }
   }
 };
 
@@ -488,11 +570,29 @@ export const updateJobProgress = (
   if (job) {
     const progress = Math.round((processedRecords / job.totalRecords) * 100);
     
-    jobs.set(jobId, {
+    const updatedJob = {
       ...job,
       processedRecords,
       progress: Math.min(progress, 99) // Keep at 99% until completed
-    });
+    };
+    
+    jobs.set(jobId, updatedJob);
+    saveJobToFile(jobId, updatedJob);
+  } else {
+    // Try to load from file
+    const fileJob = loadJobFromFile(jobId);
+    if (fileJob) {
+      const progress = Math.round((processedRecords / fileJob.totalRecords) * 100);
+      
+      const updatedJob = {
+        ...fileJob,
+        processedRecords,
+        progress: Math.min(progress, 99) // Keep at 99% until completed
+      };
+      
+      jobs.set(jobId, updatedJob);
+      saveJobToFile(jobId, updatedJob);
+    }
   }
 };
 
@@ -508,10 +608,28 @@ export const updateJobTotalRecords = (
   if (job) {
     const progress = totalRecords > 0 ? Math.round((job.processedRecords / totalRecords) * 100) : 0;
     
-    jobs.set(jobId, {
+    const updatedJob = {
       ...job,
       totalRecords,
       progress
-    });
+    };
+    
+    jobs.set(jobId, updatedJob);
+    saveJobToFile(jobId, updatedJob);
+  } else {
+    // Try to load from file
+    const fileJob = loadJobFromFile(jobId);
+    if (fileJob) {
+      const progress = totalRecords > 0 ? Math.round((fileJob.processedRecords / totalRecords) * 100) : 0;
+      
+      const updatedJob = {
+        ...fileJob,
+        totalRecords,
+        progress
+      };
+      
+      jobs.set(jobId, updatedJob);
+      saveJobToFile(jobId, updatedJob);
+    }
   }
 };

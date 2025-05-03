@@ -85,7 +85,7 @@ const imageLimits = {
 };
 
 const documentLimits = {
-  fileSize: 10 * 1024 * 1024, // 10MB limit for documents
+  fileSize: 50 * 1024 * 1024, // 50MB limit for documents
 };
 
 // Create the multer upload instances
