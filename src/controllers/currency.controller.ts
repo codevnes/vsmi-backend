@@ -134,7 +134,7 @@ export const createCurrency = async (req: Request, res: Response): Promise<void>
 export const updateCurrency = async (req: Request, res: Response): Promise<void> => {
   try {
     const { code } = req.params;
-    const currencyData: UpdateCurrencyDto = req.body;
+    const currencyData = req.body;
     
     // Check if currency exists
     const existingCurrency = await currencyService.getCurrencyByCode(code);
@@ -146,7 +146,13 @@ export const updateCurrency = async (req: Request, res: Response): Promise<void>
       return;
     }
     
-    const updatedCurrency = await currencyService.updateCurrency(code, currencyData);
+    // Bổ sung code vào dữ liệu để phù hợp với CurrencyDto
+    const currencyDto = {
+      ...currencyData,
+      code
+    };
+    
+    const updatedCurrency = await currencyService.updateCurrency(code, currencyDto);
     
     res.status(200).json({
       success: true,
@@ -328,7 +334,7 @@ export const createManyCurrencyPrices = async (req: Request, res: Response): Pro
 export const updateCurrencyPrice = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const priceData: UpdateCurrencyPriceDto = req.body;
+    const priceData = req.body;
     
     // Check if currency price exists
     const existingPrice = await currencyService.getCurrencyPriceById(id);
@@ -340,7 +346,15 @@ export const updateCurrencyPrice = async (req: Request, res: Response): Promise<
       return;
     }
     
-    const updatedPrice = await currencyService.updateCurrencyPrice(id, priceData);
+    // Bổ sung id, currencyCode và date để phù hợp với CurrencyPriceDto
+    const priceDtoData = {
+      ...priceData,
+      id,
+      currencyCode: existingPrice.currencyCode,
+      date: existingPrice.date
+    };
+    
+    const updatedPrice = await currencyService.updateCurrencyPrice(id, priceDtoData);
     
     res.status(200).json({
       success: true,

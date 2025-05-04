@@ -3,8 +3,7 @@ import {
   CreateCurrencyDto, 
   CurrencyDto, 
   CreateCurrencyPriceDto, 
-  CurrencyPriceDto, 
-  CurrencyPriceFilterDto,
+  CurrencyPriceDto,
   CurrencyPriceQueryParams
 } from '../types/currency.types';
 import fs from 'fs';
@@ -12,7 +11,6 @@ import path from 'path';
 import { parse as csvParse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
 import { NotFoundError } from '../utils/error';
-import { CurrencyData, CurrencyPriceData } from '../types/currency.types';
 import { logger } from '../utils/logger';
 import prisma from '../config/database';
 

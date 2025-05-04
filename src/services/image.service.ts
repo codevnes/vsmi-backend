@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { CreateImageInput, ImageData, ImageListParams, ImageListResult, UpdateImageInput, ImageUploadOptions, ImageUploadResult, ImageUploadErrorResult } from '../types/image.types';
 import { BadRequestError, NotFoundError } from '../utils/error';
 import prisma from '../config/database';
-import sharp from 'sharp';
 
 /**
  * Create a new image record

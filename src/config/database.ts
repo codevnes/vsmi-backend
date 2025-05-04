@@ -28,13 +28,6 @@ const prisma = global.prisma || new PrismaClient({
     }
   },
   log: ['error'],
-  // Add connection pool configuration
-  // This limits the number of connections Prisma will open
-  __internal: {
-    engine: {
-      connectionLimit: 5, // Adjust based on your needs
-    }
-  }
 });
 
 // Add connection error handling
