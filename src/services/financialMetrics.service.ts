@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { NotFoundError, BadRequestError } from '../utils/error';
-
-const prisma = new PrismaClient();
 
 /**
  * Get all financial metrics with optional filters and pagination
@@ -670,4 +668,8 @@ export const bulkImportFinancialMetrics = async (
   }
   
   return results;
+};
+
+export const getFinancialMetricsForStock = async (symbol: string, year?: number, quarter?: number) => {
+  // ... existing code ...
 }; 

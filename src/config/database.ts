@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
+// Declare global variable for PrismaClient
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
 // Create a custom URL that uses a known database like 'postgres' which always exists
 // This will be used as a fallback if the database in DATABASE_URL doesn't exist
 const getDatabaseUrl = () => {
@@ -15,13 +20,21 @@ const getDatabaseUrl = () => {
   return envUrl;
 };
 
-const prisma = new PrismaClient({
+// Use a single PrismaClient instance throughout the application lifecycle
+const prisma = global.prisma || new PrismaClient({
   datasources: {
     db: {
       url: getDatabaseUrl(),
     }
   },
   log: ['error'],
+  // Add connection pool configuration
+  // This limits the number of connections Prisma will open
+  __internal: {
+    engine: {
+      connectionLimit: 5, // Adjust based on your needs
+    }
+  }
 });
 
 // Add connection error handling
@@ -38,5 +51,15 @@ prisma.$connect()
       logger.info('You can create the database using: npx prisma db push');
     }
   });
+
+// In development, save the instance to global to prevent multiple instances during hot reload
+if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prisma;
+}
+
+// Handle application shutdown - ensure connections are closed
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
 
 export default prisma;

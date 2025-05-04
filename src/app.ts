@@ -21,36 +21,35 @@ const dataDir = path.join(process.cwd(), 'data', 'jobs');
   }
 });
 
-// Log environment configuration for debugging
-console.log('CORS Configuration:', {
-  NODE_ENV: process.env.NODE_ENV,
-  CORS_MODE: process.env.CORS_MODE || 'not set',
-});
-
-// CORS handling
-// Set CORS_MODE to one of:
-// - 'disabled' = No CORS headers from Express (for use behind Nginx/proxy that sets CORS)
-// - 'development' = Allow all origins (*)
-// - 'production' = Restrict to specific origin
-const corsMode = process.env.CORS_MODE || 'disabled';
-
-if (corsMode === 'development') {
-  // Development mode - permissive CORS
-  console.log('Setting up permissive CORS for development');
-  app.use(cors());
-} else if (corsMode === 'production') {
-  // Production mode - restrictive CORS
-  console.log('Setting up restrictive CORS for production');
-  const origin = process.env.CORS_ORIGIN || 'https://admin.vsmi.vn';
+// NOTE: CORS handling is completely disabled in Express in production
+// because it's being handled by Nginx
+// In development, we enable CORS to allow localhost connections
+if (process.env.NODE_ENV !== 'production') {
   app.use(cors({
-    origin,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', /\.vsmi\.vn$/],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
   }));
-} else {
-  // Disabled - no CORS headers from Express
-  console.log('CORS headers disabled in Express (should be handled by proxy)');
 }
+
+// Ensure CORS headers are present for OPTIONS requests (preflight)
+app.options('*', (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    const origin = req.headers.origin;
+    if (origin && (origin === 'http://localhost:3000' || origin === 'http://127.0.0.1:3000' || /\.vsmi\.vn$/.test(origin))) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.status(200).send();
+  } else {
+    res.status(204).send();
+  }
+});
 
 app.use(express.json({ limit: '50mb' }));
 app.set('trust proxy', 1);
@@ -64,8 +63,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.get('/api/v1/env-check', (req, res) => {
   res.json({
     env: process.env.NODE_ENV,
-    corsMode: process.env.CORS_MODE, 
-    corsOrigin: process.env.CORS_ORIGIN,
+    message: process.env.NODE_ENV === 'production' 
+      ? 'CORS is handled by Nginx, not Express' 
+      : 'CORS is handled by Express for local development',
     headers: req.headers,
   });
 });

@@ -1,8 +1,7 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/error';
 import { SelectedStocksData } from '../types';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 // Convert Prisma SelectedStocks to SelectedStocksData
 function convertToSelectedStocks(selectedStocks: any): SelectedStocksData {

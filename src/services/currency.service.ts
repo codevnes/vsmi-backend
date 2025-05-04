@@ -1,17 +1,20 @@
-import { PrismaClient, Currency, CurrencyPrice, Prisma } from '@prisma/client';
+import { Currency, CurrencyPrice, Prisma } from '@prisma/client';
 import { 
   CreateCurrencyDto, 
-  UpdateCurrencyDto, 
+  CurrencyDto, 
   CreateCurrencyPriceDto, 
-  UpdateCurrencyPriceDto,
+  CurrencyPriceDto, 
+  CurrencyPriceFilterDto,
   CurrencyPriceQueryParams
-} from '../types';
+} from '../types/currency.types';
 import fs from 'fs';
 import path from 'path';
 import { parse as csvParse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
-
-const prisma = new PrismaClient();
+import { NotFoundError } from '../utils/error';
+import { CurrencyData, CurrencyPriceData } from '../types/currency.types';
+import { logger } from '../utils/logger';
+import prisma from '../config/database';
 
 export const getCurrencies = async (
   search?: string,
@@ -54,7 +57,7 @@ export const createCurrency = async (currencyData: CreateCurrencyDto): Promise<C
 
 export const updateCurrency = async (
   code: string,
-  currencyData: UpdateCurrencyDto
+  currencyData: CurrencyDto
 ): Promise<Currency | null> => {
   return prisma.currency.update({
     where: { code },
@@ -120,7 +123,7 @@ export const createManyCurrencyPrices = async (data: CreateCurrencyPriceDto[]): 
 
 export const updateCurrencyPrice = async (
   id: string,
-  data: UpdateCurrencyPriceDto
+  data: CurrencyPriceDto
 ): Promise<CurrencyPrice | null> => {
   return prisma.currencyPrice.update({
     where: { id },

@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { 
   CategoryData, 
   CategoryListParams, 
@@ -9,8 +9,7 @@ import {
   UpdateCategoryInput 
 } from '../types';
 import { BadRequestError, NotFoundError } from '../utils/error';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 /**
  * Generate a slug from title

@@ -1,10 +1,9 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/error';
 import { StockPriceData } from '../types';
 import fs from 'fs';
 import path from 'path';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 // Create a jobs directory if it doesn't exist
 const jobsDir = path.join(process.cwd(), 'data', 'jobs');

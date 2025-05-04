@@ -1,14 +1,14 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/error';
 import { 
-  StockData, 
   CreateStockInput, 
+  StockData, 
   UpdateStockInput, 
   StockListParams, 
-  StockListResult 
+  StockListResult,
 } from '../types';
-
-const prisma = new PrismaClient();
+import { logger } from '../utils/logger';
+import prisma from '../config/database';
 
 /**
  * Convert Prisma Stock to StockData

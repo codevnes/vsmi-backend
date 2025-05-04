@@ -7,12 +7,10 @@ import { body, param, query } from 'express-validator';
 import { validate } from '../middlewares/validation.middleware';
 import { authenticate } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/role.middleware';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-
-const prisma = new PrismaClient();
 
 /**
  * Validation rules for creating a stock price

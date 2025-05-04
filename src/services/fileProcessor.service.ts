@@ -3,10 +3,8 @@ import path from 'path';
 import { parse as csvParse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
 import { StockPriceData } from '../types';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { NotFoundError } from '../utils/error';
-
-const prisma = new PrismaClient();
 
 /**
  * Service to handle processing of CSV and XLSX files for stock price data
