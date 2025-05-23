@@ -21,31 +21,19 @@ const dataDir = path.join(process.cwd(), 'data', 'jobs');
   }
 });
 
-// Enable CORS for all environments to fix cross-origin issues
+// Enable CORS for all origins
 app.use(cors({
-  origin: ['http://localhost:5001', 'http://127.0.0.1:5001', 'http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:3000', /\.vsmi\.vn$/],
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   credentials: true
 }));
 
 // Ensure CORS headers are present for OPTIONS requests (preflight)
 app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  if (origin && (
-    origin === 'http://localhost:5001' || 
-    origin === 'http://127.0.0.1:5001' || 
-    origin === 'http://localhost:5173' || 
-    origin === 'http://localhost:3000' || 
-    origin === 'http://127.0.0.1:3000' || 
-    /\.vsmi\.vn$/.test(origin)
-  )) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.status(200).send();
 });
@@ -62,7 +50,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.get('/api/v1/env-check', (req, res) => {
   res.json({
     env: process.env.NODE_ENV,
-    message: 'CORS is enabled for all environments',
+    message: 'CORS is completely disabled - all origins are allowed',
     headers: req.headers,
   });
 });
