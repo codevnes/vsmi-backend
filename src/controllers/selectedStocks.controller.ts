@@ -40,17 +40,31 @@ const isValidDate: CustomValidator = (value) => {
 export const parseDate = (dateString: string | Date): Date => {
   if (dateString instanceof Date) return dateString;
   
-  // Handle format "M/D/YYYY"
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
-    const parts = dateString.split('/');
-    const month = parseInt(parts[0]) - 1;
-    const day = parseInt(parts[1]);
-    const year = parseInt(parts[2]);
-    return new Date(year, month, day);
+  try {
+    // Handle format "M/D/YYYY"
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
+      const parts = dateString.split('/');
+      const month = parseInt(parts[0]) - 1;
+      const day = parseInt(parts[1]);
+      const year = parseInt(parts[2]);
+      return new Date(Date.UTC(year, month, day));
+    }
+    
+    // Handle YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      // Add time component to ensure proper ISO format
+      return new Date(`${dateString}T00:00:00Z`);
+    }
+    
+    // Default to standard Date parsing
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error(`Invalid date format: ${dateString}`);
+    }
+    return date;
+  } catch (error) {
+    throw new BadRequestError(`Invalid date format: ${dateString}. Expected ISO-8601 date or MM/DD/YYYY format.`);
   }
-  
-  // Default to standard Date parsing
-  return new Date(dateString);
 };
 
 /**

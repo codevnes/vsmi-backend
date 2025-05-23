@@ -18,17 +18,31 @@ function convertToSelectedStocks(selectedStocks: any): SelectedStocksData {
 function parseDate(dateString: string | Date): Date {
   if (dateString instanceof Date) return dateString;
   
-  // Handle format "M/D/YYYY"
-  const parts = dateString.split('/');
-  if (parts.length === 3) {
-    const month = parseInt(parts[0]) - 1; // Month is 0-indexed in JavaScript Date
-    const day = parseInt(parts[1]);
-    const year = parseInt(parts[2]);
-    return new Date(year, month, day);
+  try {
+    // Handle format "M/D/YYYY"
+    const parts = dateString.split('/');
+    if (parts.length === 3) {
+      const month = parseInt(parts[0]) - 1; // Month is 0-indexed in JavaScript Date
+      const day = parseInt(parts[1]);
+      const year = parseInt(parts[2]);
+      return new Date(year, month, day);
+    }
+    
+    // Handle YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      // Add time component to ensure proper ISO format
+      return new Date(`${dateString}T00:00:00Z`);
+    }
+    
+    // Fallback to standard Date parsing
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error(`Invalid date format: ${dateString}`);
+    }
+    return date;
+  } catch (error) {
+    throw new BadRequestError(`Invalid date format: ${dateString}. Expected ISO-8601 date or MM/DD/YYYY format.`);
   }
-  
-  // Fallback to standard Date parsing
-  return new Date(dateString);
 }
 
 /**
@@ -136,7 +150,10 @@ export const getSelectedStocks = async (params: GetSelectedStocksParams): Promis
 export const createSelectedStocks = async (
   data: Omit<SelectedStocksData, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<SelectedStocksData> => {
-  const { symbol, date, close, return: returnValue, qIndex, volume } = data;
+  const { symbol, date: inputDate, close, return: returnValue, qIndex, volume } = data;
+
+  // Make sure date is a proper Date object
+  const date = typeof inputDate === 'string' ? parseDate(inputDate) : inputDate;
 
   // Check if stock exists
   const stock = await prisma.stock.findUnique({
@@ -245,10 +262,14 @@ export const bulkUpsertSelectedStocks = async (
   const batches = [];
 
   // Format entries to ensure dates are Date objects
-  const formattedEntries = selectedStocksEntries.map(entry => ({
-    ...entry,
-    date: parseDate(entry.date)
-  }));
+  const formattedEntries = selectedStocksEntries.map(entry => {
+    // Ensure date is properly converted to Date object
+    const date = typeof entry.date === 'string' ? parseDate(entry.date) : entry.date;
+    return {
+      ...entry,
+      date
+    };
+  });
 
   // Split the entries into batches
   for (let i = 0; i < formattedEntries.length; i += batchSize) {

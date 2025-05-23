@@ -35,7 +35,7 @@ prisma.$connect()
   .then(() => {
     logger.info('Database connected successfully');
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     logger.error('Database connection error:', error);
     
     // If the error is about database not existing, suggest creating it
