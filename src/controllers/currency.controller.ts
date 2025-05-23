@@ -52,7 +52,7 @@ export const getCurrencies = async (req: Request, res: Response): Promise<void> 
     
     const { currencies, total } = await currencyService.getCurrencies(
       search as string,
-      limit ? parseInt(limit as string, 10) : undefined,
+      limit ? parseInt(limit as string, 20) : undefined,
       offset ? parseInt(offset as string, 10) : undefined
     );
     
